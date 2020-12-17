@@ -152,7 +152,7 @@ Task.prototype.setPeriod = function (start, end ) {
   var children = this.getChildren();
 
   if(this.master.shrinkParent && children.length>0) {
-    //console.log("in if");
+    console.log("in if");
     var chPeriod= this.getChildrenBoudaries();
     start = chPeriod.start;
     end = chPeriod.end;
@@ -589,7 +589,7 @@ Task.prototype.moveTo = function (start, ignoreMilestones, propagateToInferiors,
   if(this.end != end || this.end != wantedStartMillis){
     console.log("compute parental tasks by end dates");
   }
-  console.log("this.start, this.end",new Date(this.start),new Date(this.end));
+  console.log("this.name, this.start, this.end",this.name, new Date(this.start),new Date(this.end));
   console.log("return true");
   return true;
 };
@@ -675,7 +675,7 @@ Task.prototype.moveToEndToEnd = function (start, ignoreMilestones, propagateToIn
 Task.prototype.moveToSimple = function (start, ignoreMilestones, propagateToInferiors) {
   //console.debug("moveTo ",this.name,new Date(start),this.duration,ignoreMilestones);
   //var profiler = new Profiler("gt_task_moveTo");
-  console.log("ganttTask : moveTo  ",this.name,new Date(start),this.duration,ignoreMilestones, new Date(end));
+  //console.log("ganttTask : moveTo  ",this.name,new Date(start),this.duration,ignoreMilestones);
   //console.log("Dependancy type:-->",dep_type);
   if (start instanceof Date) {
     start = start.getTime();
@@ -687,7 +687,7 @@ Task.prototype.moveToSimple = function (start, ignoreMilestones, propagateToInfe
   };
 
   var wantedStartMillis = start;
-
+  console.log("ganttTask : moveTo  ",this.name,new Date(start),this.duration,originalPeriod);
   //set a legal start
   start = computeStart(start);
 
@@ -787,6 +787,7 @@ Task.prototype.propagateToInferiors = function (end,start) {
       }
       
       let dep;
+      console.log(link.to,infs);
       if(link.to.dependency!=undefined){
         let dependency=link.to.dependency.split(',');
         for (let index = 0; index < dependency.length; index++) {
@@ -851,7 +852,9 @@ Task.prototype.computeStartBySuperiors = function (proposedStart, dep_type = 3) 
   //console.log("ganttTask computeStartBySuperiors : proposedStart:-->", new Date(proposedStart));
   
   //if depends -> start is set to max end + lag of superior
-  //console.log("this:-->",this);
+  console.log("this:-->",this);
+  console.log("proposedStart",proposedStart);
+  console.log("SupEnd proposedStart:-->",new Date(proposedStart));
   var supEnd=proposedStart;
   var sups = this.getSuperiors();
   //console.log("ganttTask computeStartBySuperiors : sups:-->",sups);
@@ -862,6 +865,7 @@ Task.prototype.computeStartBySuperiors = function (proposedStart, dep_type = 3) 
       console.log("ganttTask computeStartBySuperiors : ",link);
       if(link.to.dependency!=undefined)
       {
+        console.log("dependancy is not undefined");
         let dependency=link.to.dependency.split(',');
         let dep;
         for (let index = 0; index < dependency.length; index++) {
@@ -874,18 +878,27 @@ Task.prototype.computeStartBySuperiors = function (proposedStart, dep_type = 3) 
         //console.log(link);
         if(dep[1]==1){
           supEnd = Math.max(supEnd, incrementDateByUnits(new Date(link.from.start), link.lag));
+          console.log("updated supend",supEnd);
         }else if(dep[1]==2){
           console.log("ganttTask computeStartBySuperiors: end to end : link.from.end",link.from.end);
           supEnd = Math.max(supEnd, incrementDateByUnits(new Date(link.from.end), 0));
+          console.log("updated supend",supEnd);
         }
         else if(dep[1]==3){
-          //console.log("ganttTask computeStartBySuperiors: start to end : link.from.end",link.from.end);
+          console.log("ganttTask computeStartBySuperiors: start to end : link.from.end",link.from.end);
           supEnd = Math.max(supEnd, incrementDateByUnits(new Date(link.from.end), link.lag));
+          console.log("updated supend",supEnd);
+        }
+        else
+        {
+          supEnd = Math.max(supEnd, incrementDateByUnits(new Date(link.from.end), link.lag));
+          console.log("updated supend",supEnd);
         }
       }else{
         console.log("ganttTask : computeStartBySuperiors deps else");
 
         supEnd = Math.max(supEnd, incrementDateByUnits(new Date(link.from.end), link.lag));
+        console.log("updated supend",supEnd);
       }
     }
     supEnd+=1;
@@ -935,18 +948,18 @@ Task.prototype.computeEndBySuperiors = function (proposedEnd) {
 };
 
 function updateTree(task) {
-  console.log("ganttTask : updateTree this task name, start, end: -->", new Date(task.start).getTime()," : ",new Date(task.end).getTime(), task.name);
+  //console.log("ganttTask : updateTree this task name, start, end: -->", new Date(task.start).getTime()," : ",new Date(task.end).getTime(), task.name);
   var error;
 
   //try to enlarge parent
   var p = task.getParent();
-  console.log("parent task:--",p);
+  console.log("ganttTask updateTree parent task:--",p," Task:--",task );
   //no parent:exit
   if (!p)
     return true;
 
-  console.log("ganttTask: updateTree:-->",p);
-  console.log("ganttTask : updateTree parents name, start, end: -->", new Date(p.start).getTime()," : ",new Date(p.end).getTime(), task.name);
+  //console.log("ganttTask: updateTree:-->",p);
+  //console.log("ganttTask : updateTree parents name, start, end: -->", new Date(p.start).getTime()," : ",new Date(p.end).getTime(), task.name);
 
   var newStart;
   var newEnd;
@@ -955,7 +968,7 @@ function updateTree(task) {
   if (task.master.shrinkParent) {
     console.log("ganttTask updateTree task.master.shrinkParent:-->",task.master.shrinkParent);
     var chPeriod= p.getChildrenBoudaries();
-    console.log("ganttTask updateTree chPeriod:-->",new Date(chPeriod.start).getDate()," : ",new Date(chPeriod.end).getDate());
+    console.log("ganttTask updateTree chPeriod:-->",chPeriod);
     newStart = chPeriod.start;
     newEnd = chPeriod.end;
   } else {
@@ -996,7 +1009,7 @@ function updateTree(task) {
 
   //propagate updates if needed
   if (newStart != p.start || newEnd != p.end) {
-    console.log("newStart != p.start || newEnd != p.end:-->",newStart,p.start, newEnd, p.end);
+    console.log("ganttTask updateTree newStart != p.start || newEnd != p.end:-->",newStart,p.start, newEnd, p.end);
     //can write?
     if (!p.canWrite) {
       task.master.setErrorOnTransaction(GanttMaster.messages["CANNOT_WRITE"] + "\n" + p.name, task);
@@ -1177,9 +1190,11 @@ Task.prototype.getChildrenBoudaries = function () {
   var children = this.getChildren();
   for (var i = 0; i < children.length; i++) {
     var ch = children[i];
+    console.log("getChildrenBoudaries",ch);
     newStart = Math.min(newStart, ch.start);
     newEnd = Math.max(newEnd, ch.end);
   }
+  console.log("getChildrenBoudaries newstart and end",newStart,newEnd);
   return({start:newStart,end:newEnd})
 }
 
